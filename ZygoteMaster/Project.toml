@@ -1,0 +1,9 @@
+[deps]
+ArnoldiMethod = "ec485272-7323-5ecc-a04f-4719b315124d"
+Conda = "8f4d0f93-b110-5947-807f-2305c1781a2d"
+GenericLinearAlgebra = "14197337-ba66-59df-a3e3-ca00e7dcff7a"
+IterativeSolvers = "42fd0dbc-a981-5370-80f2-aaf504508153"
+KrylovKit = "0b1a1467-8014-51b9-945f-bf0ae24f4b77"
+PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
+Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
+ZygoteRules = "700de1a5-db45-46bc-99cf-38207098b444"
