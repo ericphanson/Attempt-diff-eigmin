@@ -4,11 +4,20 @@ using KrylovKit: eigsolve
 # helper for `herm`
 function f(x, y, i, j)
     if i == j
-        return x + 0im
+        return x/2 + im*zero(y)
     elseif i > j
         return x + im * y
     elseif i < j
-        return x - im * y
+        return zero(x) + im*zero(y)
+    end
+end
+
+# helper for invherm
+function finv(z, i, j)
+    if i <= j
+        return real(z)
+    elseif i > j
+        return imag(z)
     end
 end
 
@@ -17,12 +26,17 @@ function herm(v::AbstractVector)
     d = isqrt(length(v))
     @assert d^2 == length(v)
     m = reshape(v, d, d)
-    m = [ f(m[i,j], m[j,i], i, j) for i = 1:d, j = 1:d ]
+    m = [ f(m[i,j], m[j,i], i, j) for i = 1:d, j = 1:d]
+    m = m + m'
     return m
 end
 
 # Recover the vector representation
-invherm(A::AbstractMatrix) = vec(real(A))
+function invherm(A::AbstractMatrix)
+    d = size(A,1)
+    m = [ finv(A[i,j], i, j) for i = 1:d for j = 1:d ]
+    return vec(m)
+end
 
 # Find the minimal eigenvalue using KrylovKit (from a vector representation)
 function eigmin_vec(v::AbstractVector)

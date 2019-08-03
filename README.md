@@ -12,11 +12,20 @@ using KrylovKit: eigsolve
 # helper for `herm`
 function f(x, y, i, j)
     if i == j
-        return x + 0im
+        return x/2 + im*zero(y)
     elseif i > j
         return x + im * y
     elseif i < j
-        return x - im * y
+        return zero(x) + im*zero(y)
+    end
+end
+
+# helper for invherm
+function finv(z, i, j)
+    if i <= j
+        return real(z)
+    elseif i > j
+        return imag(z)
     end
 end
 
@@ -25,12 +34,17 @@ function herm(v::AbstractVector)
     d = isqrt(length(v))
     @assert d^2 == length(v)
     m = reshape(v, d, d)
-    m = [ f(m[i,j], m[j,i], i, j) for i = 1:d, j = 1:d ]
+    m = [ f(m[i,j], m[j,i], i, j) for i = 1:d, j = 1:d]
+    m = m + m'
     return m
 end
 
 # Recover the vector representation
-invherm(A::AbstractMatrix) = vec(real(A))
+function invherm(A::AbstractMatrix)
+    d = size(A,1)
+    m = [ finv(A[i,j], i, j) for i = 1:d for j = 1:d ]
+    return vec(m)
+end
 
 # Find the minimal eigenvalue using KrylovKit (from a vector representation)
 function eigmin_vec(v::AbstractVector)
@@ -61,54 +75,54 @@ Results:
 ### Julia 1.1, with Zygote master
 
 ```julia
-eigmin(A) = -0.8078789788911267
-eigmin_vec(v) = -1.9581067015671945
-Zygote.gradient(eigmin_vec, v) = ([0.47679, 0.00475815, -0.136318, -0.327907, 0.00475815, 0.0425654, 0.0943152, -0.00933051, -0.136318, 0.0943152, 0.254268, 0.0801185, -0.327907, -0.00933051, 0.0801185, 0.226377],)
+eigmin(A) = 0.5048367985151581
+eigmin_vec(v) = 0.5048367985151585
+Zygote.gradient(eigmin_vec, v) = ([0.24877, 0.101115, -0.395725, 0.141637, -7.28584e-17, 0.0410993, -0.160846, 0.0575697, 3.05311e-16, 6.93889e-18, 0.62949, -0.225305, -1.80411e-16, -3.46945e-17, 1.249e-16, 0.0806408],)
 ```
 
 
 ### Julia 1.2, with Zygote master
 
 ```julia
-eigmin(A) = -1.1372203280107402
-eigmin_vec(v) = -2.1018366344920256
-Zygote.gradient(eigmin_vec, v) = ([0.39837560964363916, 0.01532176403897223, 0.018843111312866895, -0.37500833839094727, 0.01532176403897223, 0.008750292278393496, 0.04017521061891152, 0.005423964445178373, 0.018843111312866895, 0.04017521061891152, 0.19159583251396275, 0.07820303855098244, -0.37500833839094727, 0.005423964445178373, 0.07820303855098244, 0.4012782655640047],)
+eigmin(A) = -0.09402247942837506
+eigmin_vec(v) = -0.09402247942837508
+Zygote.gradient(eigmin_vec, v) = ([0.2397688633227418, -0.30780011987281963, 0.2848572902802824, -0.07996978106831973, -5.551115123125783e-17, 0.39513434930955055, -0.3656817940405243, 0.1026601530237028, 5.551115123125783e-17, 0.0, 0.3384245756572708, -0.09500806244706556, 1.3877787807814457e-17, -4.163336342344337e-17, 4.163336342344337e-17, 0.02667221171043694],)
 ```
 
 
 ### Julia 1.3, with Zygote master
 
 ```julia
-eigmin(A) = -1.2240591297318597
-eigmin_vec(v) = -2.546352747781013
-Zygote.gradient(eigmin_vec, v) = ([0.1777968086365543, 0.14862318758203363, -0.22990595665998476, -0.1565564336311766, 0.14862318758203363, 0.36913735812029724, -0.12796403149620966, -0.1471736516772433, -0.22990595665998476, -0.12796403149620966, 0.31412666981323356, 0.19816472686121625, -0.1565564336311766, -0.1471736516772433, 0.19816472686121625, 0.13893916342991502],)
+eigmin(A) = -0.8300994017971092
+eigmin_vec(v) = -0.8300994017971093
+Zygote.gradient(eigmin_vec, v) = ([0.6869165271186413, -0.1632750028987922, -0.4195107407734381, -0.1114191352238327, -2.498001805406602e-16, 0.03880926651077101, 0.09971461554895347, 0.026483508415441243, 1.3877787807814457e-16, -1.734723475976807e-16, 0.2562018159069314, 0.06804542052605606, 2.0122792321330962e-16, -8.673617379884035e-17, -9.71445146547012e-17, 0.018072390463656128],)
 ```
 
 
 ### Julia 1.1, with Zygote release
 
 ```julia
-eigmin(A) = -1.5562998320035897
-eigmin_vec(v) = -2.575436759655515
-Zygote.gradient(eigmin_vec, v) = ([0.18366, 0.221277, -0.250579, -0.0547375, 0.221277, 0.295235, -0.233653, -0.063296, -0.250579, -0.233653, 0.504546, 0.0810042, -0.0547375, -0.063296, 0.0810042, 0.0165595],)
+eigmin(A) = -0.8425047617277899
+eigmin_vec(v) = -0.8425047617277898
+Zygote.gradient(eigmin_vec, v) = ([0.327468, -0.432352, -0.0669327, 0.169776, -5.55112e-17, 0.570831, 0.0883706, -0.224154, 1.30972e-16, -1.83881e-16, 0.0136807, -0.0347014, -8.32667e-17, 1.35308e-16, -5.11743e-17, 0.088021],)
 ```
 
 
 ### Julia 1.2, with Zygote release
 
 ```julia
-eigmin(A) = -0.5682950352288602
-eigmin_vec(v) = -2.036016111521105
-Zygote.gradient(eigmin_vec, v) = ([0.1859345500621895, -0.063552114385704, -0.20488568849356967, -0.04763199952618616, -0.063552114385704, 0.32745698121472977, 0.18385591282205427, -0.23483868835745586, -0.20488568849356967, 0.18385591282205427, 0.26814638706116845, -0.04100584354391258, -0.04763199952618616, -0.23483868835745586, -0.04100584354391258, 0.21846208166191233],)
+eigmin(A) = -1.5231421841396422
+eigmin_vec(v) = -1.523142184139642
+Zygote.gradient(eigmin_vec, v) = ([0.06301710286149412, -0.15112364977731277, -0.13301734750469418, 0.13606606979419056, -2.0816681711721685e-16, 0.36241522515264674, 0.3189938306556085, -0.32630508456327834, -2.42861286636753e-16, 1.6653345369377348e-16, 0.2807748045173314, -0.28721008849283514, 2.8449465006019636e-16, -2.498001805406602e-16, -6.938893903907228e-17, 0.29379286746852795],)
 ```
 
 
 ### Julia 1.3, with Zygote release
 
 ```julia
-eigmin(A) = -0.7349214913651515
-eigmin_vec(v) = -1.892456581758239
-Zygote.gradient(eigmin_vec, v) = ([0.036267358772194266, 0.03459689563090312, -0.07566377621588521, -0.07951750327203881, 0.03459689563090312, 0.2425350991053531, 0.09988932251735495, -0.3036701741814039, -0.07566377621588521, 0.09988932251735495, 0.29915840847990055, -0.02118692682039741, -0.07951750327203881, -0.3036701741814039, -0.02118692682039741, 0.4220391336425522],)
+eigmin(A) = -0.8111615189955498
+eigmin_vec(v) = -0.8111615189955499
+Zygote.gradient(eigmin_vec, v) = ([0.6601522462395799, -0.007630960307428272, -0.2962442384235179, -0.36950287910931556, -4.132978681514743e-16, 8.820928133661553e-5, 0.0034244040485984567, 0.004271229583819903, 1.6653345369377348e-16, -1.8713329497099807e-16, 0.13294001391200352, 0.1658149307838763, 2.220446049250313e-16, -2.3375398838787476e-16, -1.3877787807814457e-17, 0.20681953056708025],)
 ```
 
 ## Method ArnoldiMethod.jl
@@ -137,8 +151,8 @@ Results:
 ### Julia 1.1, with Zygote master
 
 ```julia
-eigmin(A) = -0.7098178829472451
-test_eigmin(A) = -0.7098178829472449
+eigmin(A) = -0.5751921740346702
+test_eigmin(A) = -0.57519217403467
 ERROR: LoadError: Compiling Tuple{typeof(ArnoldiMethod._partialschur),Array{Float64,2},Type{Float64},Int64,Int64,Int64,Float64,Int64,SR}: DimensionMismatch("dimensions must match")
 Stacktrace:
  [1] promote_shape at ./indices.jl:154 [inlined]
@@ -176,8 +190,8 @@ in expression starting at /home/eric/Attempt-diff-eigmin/Methods/ArnoldiMethod.j
 ### Julia 1.2, with Zygote master
 
 ```julia
-eigmin(A) = -0.9498435632984961
-test_eigmin(A) = -0.9498435632984964
+eigmin(A) = -1.1764315473398226
+test_eigmin(A) = -1.176431547339822
 ERROR: LoadError: Compiling Tuple{typeof(ArnoldiMethod._partialschur),Array{Float64,2},Type{Float64},Int64,Int64,Int64,Float64,Int64,SR}: DimensionMismatch("dimensions must match")
 Stacktrace:
  [1] promote_shape at ./indices.jl:154 [inlined]
@@ -216,8 +230,8 @@ in expression starting at /home/eric/Attempt-diff-eigmin/Methods/ArnoldiMethod.j
 ### Julia 1.3, with Zygote master
 
 ```julia
-eigmin(A) = -0.9573353459086621
-test_eigmin(A) = -0.9573353459086618
+eigmin(A) = -0.49961371242451963
+test_eigmin(A) = -0.49961371242452063
 ERROR: LoadError: Compiling Tuple{typeof(ArnoldiMethod._partialschur),Array{Float64,2},Type{Float64},Int64,Int64,Int64,Float64,Int64,SR}: DimensionMismatch("dimensions must match")
 Stacktrace:
  [1] promote_shape at ./indices.jl:154 [inlined]
@@ -256,8 +270,8 @@ in expression starting at /home/eric/Attempt-diff-eigmin/Methods/ArnoldiMethod.j
 ### Julia 1.1, with Zygote release
 
 ```julia
-eigmin(A) = -1.4971889904441897
-test_eigmin(A) = -1.4971889904441895
+eigmin(A) = -1.2725493851290341
+test_eigmin(A) = -1.2725493851290346
 ERROR: LoadError: Compiling Tuple{typeof(ArnoldiMethod._partialschur),Array{Float64,2},Type{Float64},Int64,Int64,Int64,Float64,Int64,SR}: DimensionMismatch("dimensions must match")
 Stacktrace:
  [1] promote_shape at ./indices.jl:154 [inlined]
@@ -295,8 +309,8 @@ in expression starting at /home/eric/Attempt-diff-eigmin/Methods/ArnoldiMethod.j
 ### Julia 1.2, with Zygote release
 
 ```julia
-eigmin(A) = -1.4215247890163398
-test_eigmin(A) = -1.4215247890163392
+eigmin(A) = -0.9009894642624153
+test_eigmin(A) = -0.9009894642624158
 ERROR: LoadError: Compiling Tuple{typeof(ArnoldiMethod._partialschur),Array{Float64,2},Type{Float64},Int64,Int64,Int64,Float64,Int64,SR}: DimensionMismatch("dimensions must match")
 Stacktrace:
  [1] promote_shape at ./indices.jl:154 [inlined]
@@ -335,8 +349,8 @@ in expression starting at /home/eric/Attempt-diff-eigmin/Methods/ArnoldiMethod.j
 ### Julia 1.3, with Zygote release
 
 ```julia
-eigmin(A) = -0.9359337186385737
-test_eigmin(A) = -0.9359337186385737
+eigmin(A) = -1.1725621548612255
+test_eigmin(A) = -1.172562154861224
 ERROR: LoadError: Compiling Tuple{typeof(ArnoldiMethod._partialschur),Array{Float64,2},Type{Float64},Int64,Int64,Int64,Float64,Int64,SR}: DimensionMismatch("dimensions must match")
 Stacktrace:
  [1] promote_shape at ./indices.jl:154 [inlined]
@@ -397,8 +411,8 @@ Results:
 ### Julia 1.1, with Zygote master
 
 ```julia
-eigmin(A) = -0.9485166717851579
-test_eigmin(A) = -0.9485166717851584
+eigmin(A) = -0.8553965548183468
+test_eigmin(A) = -0.8553965548183471
 ERROR: LoadError: TypeError: in ccall: first argument not a pointer or valid constant expression, expected Ptr, got Tuple{Symbol,String}
 Stacktrace:
  [1] _forward(::Zygote.Context, ::typeof(axpy!), ::Int64, ::Float64, ::Ptr{Float64}, ::Int64, ::Ptr{Float64}, ::Int64) at /buildworker/worker/package_linux64/build/usr/share/julia/stdlib/v1.1/LinearAlgebra/src/blas.jl:456
@@ -430,8 +444,8 @@ in expression starting at /home/eric/Attempt-diff-eigmin/Methods/GenericLinearAl
 ### Julia 1.2, with Zygote master
 
 ```julia
-eigmin(A) = -1.015621038351544
-test_eigmin(A) = -1.015621038351544
+eigmin(A) = -1.7797744032860334
+test_eigmin(A) = -1.779774403286034
 ERROR: LoadError: TypeError: in ccall: first argument not a pointer or valid constant expression, expected Ptr, got Tuple{Symbol,String}
 Stacktrace:
  [1] _forward(::Zygote.Context, ::typeof(axpy!), ::Int64, ::Float64, ::Ptr{Float64}, ::Int64, ::Ptr{Float64}, ::Int64) at /buildworker/worker/package_linux64/build/usr/share/julia/stdlib/v1.2/LinearAlgebra/src/blas.jl:456
@@ -463,8 +477,8 @@ in expression starting at /home/eric/Attempt-diff-eigmin/Methods/GenericLinearAl
 ### Julia 1.3, with Zygote master
 
 ```julia
-eigmin(A) = -0.9354003802104077
-test_eigmin(A) = -0.9354003802104083
+eigmin(A) = -1.4694209181699027
+test_eigmin(A) = -1.4694209181699025
 ERROR: LoadError: TypeError: in ccall: first argument not a pointer or valid constant expression, expected Ptr, got Tuple{Symbol,String}
 Stacktrace:
  [1] _forward(::Zygote.Context, ::typeof(axpy!), ::Int64, ::Float64, ::Ptr{Float64}, ::Int64, ::Ptr{Float64}, ::Int64) at /buildworker/worker/package_linux64/build/usr/share/julia/stdlib/v1.3/LinearAlgebra/src/blas.jl:455
@@ -496,8 +510,8 @@ in expression starting at /home/eric/Attempt-diff-eigmin/Methods/GenericLinearAl
 ### Julia 1.1, with Zygote release
 
 ```julia
-eigmin(A) = -0.35214162301951246
-test_eigmin(A) = -0.3521416230195121
+eigmin(A) = -1.031180808281565
+test_eigmin(A) = -1.0311808082815648
 ERROR: LoadError: TypeError: in ccall: first argument not a pointer or valid constant expression, expected Ptr, got Tuple{Symbol,String}
 Stacktrace:
  [1] _forward(::Zygote.Context, ::typeof(axpy!), ::Int64, ::Float64, ::Ptr{Float64}, ::Int64, ::Ptr{Float64}, ::Int64) at /buildworker/worker/package_linux64/build/usr/share/julia/stdlib/v1.1/LinearAlgebra/src/blas.jl:456
@@ -530,8 +544,8 @@ in expression starting at /home/eric/Attempt-diff-eigmin/Methods/GenericLinearAl
 ### Julia 1.2, with Zygote release
 
 ```julia
-eigmin(A) = -1.0185551983106431
-test_eigmin(A) = -1.0185551983106425
+eigmin(A) = -0.94142214142147
+test_eigmin(A) = -0.9414221414214696
 ERROR: LoadError: TypeError: in ccall: first argument not a pointer or valid constant expression, expected Ptr, got Tuple{Symbol,String}
 Stacktrace:
  [1] _forward(::Zygote.Context, ::typeof(axpy!), ::Int64, ::Float64, ::Ptr{Float64}, ::Int64, ::Ptr{Float64}, ::Int64) at /buildworker/worker/package_linux64/build/usr/share/julia/stdlib/v1.2/LinearAlgebra/src/blas.jl:456
@@ -564,8 +578,8 @@ in expression starting at /home/eric/Attempt-diff-eigmin/Methods/GenericLinearAl
 ### Julia 1.3, with Zygote release
 
 ```julia
-eigmin(A) = -0.31054858071639524
-test_eigmin(A) = -0.31054858071639524
+eigmin(A) = -0.4410901605418522
+test_eigmin(A) = -0.4410901605418521
 ERROR: LoadError: TypeError: in ccall: first argument not a pointer or valid constant expression, expected Ptr, got Tuple{Symbol,String}
 Stacktrace:
  [1] _forward(::Zygote.Context, ::typeof(axpy!), ::Int64, ::Float64, ::Ptr{Float64}, ::Int64, ::Ptr{Float64}, ::Int64) at /buildworker/worker/package_linux64/build/usr/share/julia/stdlib/v1.3/LinearAlgebra/src/blas.jl:455
@@ -620,8 +634,8 @@ Results:
 ### Julia 1.1, with Zygote master
 
 ```julia
-eigmin(A) = -0.1451628767986209
-test_eigmin(A) = -0.14516287679847817
+eigmin(A) = -1.3032367452360698
+test_eigmin(A) = -1.303236745219974
 ERROR: LoadError: Compiling Tuple{getfield(IterativeSolvers, Symbol("##lobpcg!#53")),Bool,Int64,Bool,Float64,typeof(IterativeSolvers.lobpcg!),IterativeSolvers.LOBPCGIterator{false,Float64,Array{Float64,2},Nothing,Array{Float64,1},Array{Float64,1},Array{Int64,1},Array{Float64,2},IterativeSolvers.Blocks{false,Float64,Array{Float64,2}},IterativeSolvers.CholQR{Array{Float64,2}},IterativeSolvers.RPreconditioner{Nothing,Float64,Array{Float64,2}},IterativeSolvers.Constraint{Nothing,Array{Nothing,2},Array{Nothing,2},Nothing},IterativeSolvers.BlockGram{false,Array{Float64,2}},Array{Bool,1},Array{IterativeSolvers.LOBPCGState{Array{Float64,1},Array{Float64,1}},1}}}: DimensionMismatch("dimensions must match")
 Stacktrace:
  [1] promote_shape at ./indices.jl:154 [inlined]
@@ -669,8 +683,8 @@ in expression starting at /home/eric/Attempt-diff-eigmin/Methods/IterativeSolver
 ### Julia 1.2, with Zygote master
 
 ```julia
-eigmin(A) = -0.7972793397804492
-test_eigmin(A) = -0.7972793397734711
+eigmin(A) = -1.125641318933155
+test_eigmin(A) = -1.125641318880465
 ERROR: LoadError: Compiling Tuple{getfield(IterativeSolvers, Symbol("##lobpcg!#53")),Bool,Int64,Bool,Float64,typeof(IterativeSolvers.lobpcg!),IterativeSolvers.LOBPCGIterator{false,Float64,Array{Float64,2},Nothing,Array{Float64,1},Array{Float64,1},Array{Int64,1},Array{Float64,2},IterativeSolvers.Blocks{false,Float64,Array{Float64,2}},IterativeSolvers.CholQR{Array{Float64,2}},IterativeSolvers.RPreconditioner{Nothing,Float64,Array{Float64,2}},IterativeSolvers.Constraint{Nothing,Array{Nothing,2},Array{Nothing,2},Nothing},IterativeSolvers.BlockGram{false,Array{Float64,2}},Array{Bool,1},Array{IterativeSolvers.LOBPCGState{Array{Float64,1},Array{Float64,1}},1}}}: DimensionMismatch("dimensions must match")
 Stacktrace:
  [1] promote_shape at ./indices.jl:154 [inlined]
@@ -718,8 +732,8 @@ in expression starting at /home/eric/Attempt-diff-eigmin/Methods/IterativeSolver
 ### Julia 1.3, with Zygote master
 
 ```julia
-eigmin(A) = -0.8218485214025941
-test_eigmin(A) = -0.8218485213883866
+eigmin(A) = -1.3057645392797825
+test_eigmin(A) = -1.3057645392779453
 ERROR: LoadError: Compiling Tuple{getfield(IterativeSolvers, Symbol("##lobpcg!#53")),Bool,Int64,Bool,Float64,typeof(IterativeSolvers.lobpcg!),IterativeSolvers.LOBPCGIterator{false,Float64,Array{Float64,2},Nothing,Array{Float64,1},Array{Float64,1},Array{Int64,1},Array{Float64,2},IterativeSolvers.Blocks{false,Float64,Array{Float64,2}},IterativeSolvers.CholQR{Array{Float64,2}},IterativeSolvers.RPreconditioner{Nothing,Float64,Array{Float64,2}},IterativeSolvers.Constraint{Nothing,Array{Nothing,2},Array{Nothing,2},Nothing},IterativeSolvers.BlockGram{false,Array{Float64,2}},Array{Bool,1},Array{IterativeSolvers.LOBPCGState{Array{Float64,1},Array{Float64,1}},1}}}: DimensionMismatch("dimensions must match")
 Stacktrace:
  [1] promote_shape at ./indices.jl:154 [inlined]
@@ -767,8 +781,8 @@ in expression starting at /home/eric/Attempt-diff-eigmin/Methods/IterativeSolver
 ### Julia 1.1, with Zygote release
 
 ```julia
-eigmin(A) = -0.7703049856961236
-test_eigmin(A) = -0.7703049855998795
+eigmin(A) = -0.7447758381761194
+test_eigmin(A) = -0.7447758381755931
 ERROR: LoadError: Compiling Tuple{getfield(IterativeSolvers, Symbol("##lobpcg!#53")),Bool,Int64,Bool,Float64,typeof(IterativeSolvers.lobpcg!),IterativeSolvers.LOBPCGIterator{false,Float64,Array{Float64,2},Nothing,Array{Float64,1},Array{Float64,1},Array{Int64,1},Array{Float64,2},IterativeSolvers.Blocks{false,Float64,Array{Float64,2}},IterativeSolvers.CholQR{Array{Float64,2}},IterativeSolvers.RPreconditioner{Nothing,Float64,Array{Float64,2}},IterativeSolvers.Constraint{Nothing,Array{Nothing,2},Array{Nothing,2},Nothing},IterativeSolvers.BlockGram{false,Array{Float64,2}},Array{Bool,1},Array{IterativeSolvers.LOBPCGState{Array{Float64,1},Array{Float64,1}},1}}}: DimensionMismatch("dimensions must match")
 Stacktrace:
  [1] promote_shape at ./indices.jl:154 [inlined]
@@ -816,8 +830,8 @@ in expression starting at /home/eric/Attempt-diff-eigmin/Methods/IterativeSolver
 ### Julia 1.2, with Zygote release
 
 ```julia
-eigmin(A) = -0.9803941122091208
-test_eigmin(A) = -0.9803941122077289
+eigmin(A) = -0.9098020347750992
+test_eigmin(A) = -0.9098020347653126
 ERROR: LoadError: Compiling Tuple{getfield(IterativeSolvers, Symbol("##lobpcg!#53")),Bool,Int64,Bool,Float64,typeof(IterativeSolvers.lobpcg!),IterativeSolvers.LOBPCGIterator{false,Float64,Array{Float64,2},Nothing,Array{Float64,1},Array{Float64,1},Array{Int64,1},Array{Float64,2},IterativeSolvers.Blocks{false,Float64,Array{Float64,2}},IterativeSolvers.CholQR{Array{Float64,2}},IterativeSolvers.RPreconditioner{Nothing,Float64,Array{Float64,2}},IterativeSolvers.Constraint{Nothing,Array{Nothing,2},Array{Nothing,2},Nothing},IterativeSolvers.BlockGram{false,Array{Float64,2}},Array{Bool,1},Array{IterativeSolvers.LOBPCGState{Array{Float64,1},Array{Float64,1}},1}}}: DimensionMismatch("dimensions must match")
 Stacktrace:
  [1] promote_shape at ./indices.jl:154 [inlined]
@@ -865,8 +879,8 @@ in expression starting at /home/eric/Attempt-diff-eigmin/Methods/IterativeSolver
 ### Julia 1.3, with Zygote release
 
 ```julia
-eigmin(A) = -0.6002068839980714
-test_eigmin(A) = -0.6002068839577935
+eigmin(A) = -0.735010055045599
+test_eigmin(A) = -0.7350100550427986
 ERROR: LoadError: Compiling Tuple{getfield(IterativeSolvers, Symbol("##lobpcg!#53")),Bool,Int64,Bool,Float64,typeof(IterativeSolvers.lobpcg!),IterativeSolvers.LOBPCGIterator{false,Float64,Array{Float64,2},Nothing,Array{Float64,1},Array{Float64,1},Array{Int64,1},Array{Float64,2},IterativeSolvers.Blocks{false,Float64,Array{Float64,2}},IterativeSolvers.CholQR{Array{Float64,2}},IterativeSolvers.RPreconditioner{Nothing,Float64,Array{Float64,2}},IterativeSolvers.Constraint{Nothing,Array{Nothing,2},Array{Nothing,2},Nothing},IterativeSolvers.BlockGram{false,Array{Float64,2}},Array{Bool,1},Array{IterativeSolvers.LOBPCGState{Array{Float64,1},Array{Float64,1}},1}}}: DimensionMismatch("dimensions must match")
 Stacktrace:
  [1] promote_shape at ./indices.jl:154 [inlined]
@@ -932,8 +946,8 @@ Results:
 ### Julia 1.1, with Zygote master
 
 ```julia
-eigmin(A) = -0.1697483480758236
-test_eigmin(A) = -0.16974834807582354
+eigmin(A) = -0.9906434925143212
+test_eigmin(A) = -0.9906434925143218
 ERROR: LoadError: Compiling Tuple{typeof(eigsolve),Array{Float64,2},Array{Float64,1},Int64,Symbol,KrylovKit.Lanczos{KrylovKit.ModifiedGramSchmidt2,Float64}}: DimensionMismatch("dimensions must match")
 Stacktrace:
  [1] promote_shape at ./indices.jl:154 [inlined]
@@ -977,8 +991,8 @@ in expression starting at /home/eric/Attempt-diff-eigmin/Methods/KrylovKit.jl:10
 ### Julia 1.2, with Zygote master
 
 ```julia
-eigmin(A) = 0.17794220825227455
-test_eigmin(A) = 0.17794220825227472
+eigmin(A) = -0.9376262020029714
+test_eigmin(A) = -0.9376262020029644
 ERROR: LoadError: Compiling Tuple{typeof(eigsolve),Array{Float64,2},Array{Float64,1},Int64,Symbol,KrylovKit.Lanczos{KrylovKit.ModifiedGramSchmidt2,Float64}}: DimensionMismatch("dimensions must match")
 Stacktrace:
  [1] promote_shape at ./indices.jl:154 [inlined]
@@ -1022,8 +1036,8 @@ in expression starting at /home/eric/Attempt-diff-eigmin/Methods/KrylovKit.jl:10
 ### Julia 1.3, with Zygote master
 
 ```julia
-eigmin(A) = -0.6709656419221234
-test_eigmin(A) = -0.6709656419221234
+eigmin(A) = -1.456416430644728
+test_eigmin(A) = -1.4564164306447118
 ERROR: LoadError: Compiling Tuple{typeof(eigsolve),Array{Float64,2},Array{Float64,1},Int64,Symbol,KrylovKit.Lanczos{KrylovKit.ModifiedGramSchmidt2,Float64}}: DimensionMismatch("dimensions must match")
 Stacktrace:
  [1] promote_shape at ./indices.jl:154 [inlined]
@@ -1067,8 +1081,8 @@ in expression starting at /home/eric/Attempt-diff-eigmin/Methods/KrylovKit.jl:10
 ### Julia 1.1, with Zygote release
 
 ```julia
-eigmin(A) = -0.04668495797915918
-test_eigmin(A) = -0.04668495797915982
+eigmin(A) = -0.7397801062793219
+test_eigmin(A) = -0.739780106279322
 ERROR: LoadError: Compiling Tuple{typeof(eigsolve),Array{Float64,2},Array{Float64,1},Int64,Symbol,KrylovKit.Lanczos{KrylovKit.ModifiedGramSchmidt2,Float64}}: DimensionMismatch("dimensions must match")
 Stacktrace:
  [1] promote_shape at ./indices.jl:154 [inlined]
@@ -1112,8 +1126,8 @@ in expression starting at /home/eric/Attempt-diff-eigmin/Methods/KrylovKit.jl:10
 ### Julia 1.2, with Zygote release
 
 ```julia
-eigmin(A) = -0.4678088575873383
-test_eigmin(A) = -0.46780885758733864
+eigmin(A) = -1.1442337661719768
+test_eigmin(A) = -1.1442337661719768
 ERROR: LoadError: Compiling Tuple{typeof(eigsolve),Array{Float64,2},Array{Float64,1},Int64,Symbol,KrylovKit.Lanczos{KrylovKit.ModifiedGramSchmidt2,Float64}}: DimensionMismatch("dimensions must match")
 Stacktrace:
  [1] promote_shape at ./indices.jl:154 [inlined]
@@ -1157,8 +1171,8 @@ in expression starting at /home/eric/Attempt-diff-eigmin/Methods/KrylovKit.jl:10
 ### Julia 1.3, with Zygote release
 
 ```julia
-eigmin(A) = -0.9430429128472988
-test_eigmin(A) = -0.9430429128472991
+eigmin(A) = -0.8047042005339937
+test_eigmin(A) = -0.8047042005339937
 ERROR: LoadError: Compiling Tuple{typeof(eigsolve),Array{Float64,2},Array{Float64,1},Int64,Symbol,KrylovKit.Lanczos{KrylovKit.ModifiedGramSchmidt2,Float64}}: DimensionMismatch("dimensions must match")
 Stacktrace:
  [1] promote_shape at ./indices.jl:154 [inlined]
@@ -1252,8 +1266,8 @@ Results:
 ### Julia 1.1, with Zygote master
 
 ```julia
-eigmin(A) = -1.6789179174576487
-test_eigmin(A) = -1.6789179174576487
+eigmin(A) = 0.05630226878065133
+test_eigmin(A) = 0.056302268780651366
 ERROR: LoadError: Compiling Tuple{typeof(convert),Type{PyAny},PyObject}: try/catch is not supported.
 Stacktrace:
  [1] error(::String) at ./error.jl:33
@@ -1290,8 +1304,8 @@ in expression starting at /home/eric/Attempt-diff-eigmin/Methods/PyTorch via PyC
 ### Julia 1.2, with Zygote master
 
 ```julia
-eigmin(A) = -0.7290563611351771
-test_eigmin(A) = -0.729056361135177
+eigmin(A) = -0.16542583315504478
+test_eigmin(A) = -0.16542583315504406
 ERROR: LoadError: Compiling Tuple{typeof(convert),Type{PyAny},PyObject}: try/catch is not supported.
 Stacktrace:
  [1] error(::String) at ./error.jl:33
@@ -1328,8 +1342,8 @@ in expression starting at /home/eric/Attempt-diff-eigmin/Methods/PyTorch via PyC
 ### Julia 1.3, with Zygote master
 
 ```julia
-eigmin(A) = -0.7968502242227006
-test_eigmin(A) = -0.7968502242227018
+eigmin(A) = -1.2289415008721074
+test_eigmin(A) = -1.2289415008721072
 ERROR: LoadError: Compiling Tuple{typeof(convert),Type{PyAny},PyObject}: try/catch is not supported.
 Stacktrace:
  [1] error(::String) at ./error.jl:33
@@ -1366,8 +1380,8 @@ in expression starting at /home/eric/Attempt-diff-eigmin/Methods/PyTorch via PyC
 ### Julia 1.1, with Zygote release
 
 ```julia
-eigmin(A) = -1.5283051249176698
-test_eigmin(A) = -1.5283051249176705
+eigmin(A) = -1.409944692207776
+test_eigmin(A) = -1.409944692207776
 ERROR: LoadError: Compiling Tuple{typeof(convert),Type{PyAny},PyObject}: try/catch is not supported.
 Stacktrace:
  [1] error(::String) at ./error.jl:33
@@ -1404,8 +1418,8 @@ in expression starting at /home/eric/Attempt-diff-eigmin/Methods/PyTorch via PyC
 ### Julia 1.2, with Zygote release
 
 ```julia
-eigmin(A) = -0.6015739042055829
-test_eigmin(A) = -0.6015739042055827
+eigmin(A) = -0.8666072646736706
+test_eigmin(A) = -0.8666072646736706
 ERROR: LoadError: Compiling Tuple{typeof(convert),Type{PyAny},PyObject}: try/catch is not supported.
 Stacktrace:
  [1] error(::String) at ./error.jl:33
@@ -1442,8 +1456,8 @@ in expression starting at /home/eric/Attempt-diff-eigmin/Methods/PyTorch via PyC
 ### Julia 1.3, with Zygote release
 
 ```julia
-eigmin(A) = -0.5616953891904817
-test_eigmin(A) = -0.5616953891904817
+eigmin(A) = -1.088809956686518
+test_eigmin(A) = -1.088809956686518
 ERROR: LoadError: Compiling Tuple{typeof(convert),Type{PyAny},PyObject}: try/catch is not supported.
 Stacktrace:
  [1] error(::String) at ./error.jl:33
