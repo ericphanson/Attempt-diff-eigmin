@@ -1,8 +1,6 @@
 using Zygote, LinearAlgebra
 using PyCall
 # Make sure pytorch is installed
-using Conda
-Conda.add("pytorch"; channel = "pytorch")
 
 torch = pyimport("torch")
 
